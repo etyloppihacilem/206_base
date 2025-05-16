@@ -14,7 +14,7 @@
 ####################
 
 SRC_DIR		= src
-PROJECT		= blink
+PROJECT		= base
 SRC_FILES	= $(shell find $(SRC_DIR) -type f -name "*.c")
 
 ##############
@@ -59,7 +59,7 @@ clean:
 re: clean
 	${MAKE}
 
-flash:
+flash: all
 	openocd -f interface/cmsis-dap.cfg -f target/lpc17xx.cfg -c "adapter speed 4000" -c "program $(PROJECT).bin verify reset exit"
 
 clangd: # configure clangd for tests
