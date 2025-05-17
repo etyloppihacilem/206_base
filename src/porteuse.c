@@ -12,10 +12,11 @@
 #include "porteuse.h"
 #include "LPC17xx.h"
 #include <stdint.h>
+#include <stdio.h>
 
 uint16_t send_index                      = 0;
-uint16_t write_index                     = 10;
-uint8_t  send_buffer[SEND_BUFFER_LENGTH] = { 1, 0, 1, 1, 1, 0, 0, 0, 1 };
+uint16_t write_index                     = 0;
+uint8_t  send_buffer[SEND_BUFFER_LENGTH] = { 0 };
 uint16_t counter                         = entete;
 uint8_t  message                         = MESSAGE_LENGTH;
 

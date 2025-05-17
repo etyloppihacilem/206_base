@@ -1,22 +1,22 @@
 /* #####################################################################################################################
 
-               """          main.c
+               """          com_super.h
         -\-    _|__
-         |\___/  . \        Created on 16 May. 2025 at 09:16
+         |\___/  . \        Created on 16 May. 2025 at 14:35
          \     /(((/        by hmelica
           \___/)))/         hmelica@student.42.fr
 
 ##################################################################################################################### */
 
-#include "LPC17xx.h" // Définitions registres périphériques
-#include "com_super.h"
-#include "params.h"
-#include "porteuse.h"
+#ifndef INCLUDE_INCLUDE_COM_SUPER_H_
+#define INCLUDE_INCLUDE_COM_SUPER_H_
+
+#include <stdio.h>
 #include <stdint.h>
 
-int main(void) {
-    init_com_super(9600);
-    init_porteuse();
-    init_params();
-    while (1) {}
-}
+void init_com_super(uint32_t baudrate);
+
+int fputc(int c, FILE *f);
+int _write(int file, char *ptr, int len);
+
+#endif  // INCLUDE_INCLUDE_COM_SUPER_H_
