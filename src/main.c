@@ -16,7 +16,9 @@
 
 int main(void) {
     init_com_super(9600);
-    init_porteuse();
     init_params();
+    init_porteuse();
+
+    read_params();
     while (1) {}
 }

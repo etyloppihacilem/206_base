@@ -11,6 +11,12 @@
 #ifndef INCLUDE_INCLUDE_PARAMS_H_
 #define INCLUDE_INCLUDE_PARAMS_H_
 
+#include <stdint.h>
+
+extern uint8_t nb_robots;
+extern uint8_t nb_postes;
+
 void init_params();
+void read_params(); // doit être appelé après com_super
 
 #endif  // INCLUDE_INCLUDE_PARAMS_H_
