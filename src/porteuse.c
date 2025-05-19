@@ -12,7 +12,6 @@
 #include "porteuse.h"
 #include "LPC17xx.h"
 #include <stdint.h>
-#include <stdio.h>
 
 uint16_t send_index                      = 0;
 uint16_t write_index                     = 0;
@@ -44,6 +43,7 @@ void PWM1_IRQHandler() {
 }
 
 void init_porteuse() {
+    LPC_PINCON->PINSEL4 &= 3;
     LPC_PINCON->PINSEL4 |= 1; // setting GPIO 2.0 to PWM1.1
 
     LPC_PWM1->MR0 = 500;

@@ -8,8 +8,7 @@
 
 ##################################################################################################################### */
 
-#ifndef INCLUDE_INCLUDE_PORTEUSE_H_
-#define INCLUDE_INCLUDE_PORTEUSE_H_
+#pragma once
 
 #include <stdint.h>
 
@@ -33,5 +32,3 @@ typedef enum e_message_type {
 
 void init_porteuse();
 void send_message(uint8_t type, uint8_t robot, uint8_t argument);
-
-#endif // INCLUDE_INCLUDE_PORTEUSE_H_

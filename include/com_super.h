@@ -8,15 +8,29 @@
 
 ##################################################################################################################### */
 
-#ifndef INCLUDE_INCLUDE_COM_SUPER_H_
-#define INCLUDE_INCLUDE_COM_SUPER_H_
+#pragma once
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
+
+typedef enum {
+    livraison = 0,
+    vitesse   = 1,
+} t_msg_super_type;
+
+typedef struct {
+        t_msg_super_type type;
+        uint8_t          robot;
+        uint8_t          cible;     // soit la vitesse, soit le poste de destination
+        char             livraison; // lettre de livraison
+        uint8_t          origine;   // le poste d'origine de la livraison
+} t_msg_from_super;
+
+extern t_msg_from_super inbox_super[];
+extern uint8_t          write_super;
+extern uint8_t          read_super;
 
 void init_com_super(uint32_t baudrate);
 
-int fputc(int c, FILE *f);
+int fputc(int c, FILE *f); // needed for printf, do not use this
 int _write(int file, char *ptr, int len);
-
-#endif  // INCLUDE_INCLUDE_COM_SUPER_H_

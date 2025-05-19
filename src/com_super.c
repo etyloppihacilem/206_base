@@ -16,32 +16,33 @@
 
 #define MSG_LENGTH 32
 
-char    msg[MSG_LENGTH + 1] = { 0 };
-uint8_t current_c           = 0;
+char             msg_super[MSG_LENGTH + 1] = { 0 };
+t_msg_from_super inbox_super[4]            = { 0 };
+
+uint8_t current_super = 0;
+uint8_t write_super   = 0;
+uint8_t read_super    = 0;
 
 void UART0_IRQHandler(void) {
     if (LPC_UART0->IIR & 0x04) // RDA: Receive Data Available
     {
-        if (current_c == MSG_LENGTH)
-            current_c = 0;
-        char c = LPC_UART0->RBR & 0xFF;
-        msg[current_c++] = c;
-        msg[current_c]   = '\0'; // to end string
-        // if (c == '\r')
-        //     printf("\\r\r\n");
-        // if (c == '\n')
-        //     printf("\\n\r\n");
+        if (current_super == MSG_LENGTH)
+            current_super = 0;
+        char c                     = LPC_UART0->RBR & 0xFF;
+        msg_super[current_super++] = c;
+        msg_super[current_super]   = '\0'; // to end string
     }
-    if (current_c >= 2 && msg[current_c - 1] == '\n' && msg[current_c - 2] == '\r') { // traiter le message
-        // printf("echo: %s\r\n", msg);
-        current_c      = 0;
-        msg[current_c] = '\0'; // to end string
+    if (current_super >= 2 && msg_super[current_super - 1] == '\n'
+        && msg_super[current_super - 2] == '\r') { // traiter le message
+        current_super            = 0;
+        msg_super[current_super] = '\0'; // to end string
     }
 }
 
 void init_com_super(uint32_t baudrate) {
     LPC_SC->PCONP |= (1 << 3); // on active l'horloge et le power de UART 0
 
+    LPC_PINCON->PINSEL0 &= ~((3 << 4) | (3 << 6));
     LPC_PINCON->PINSEL0 |= (1 << 4) | (1 << 6); // P0.2 = TXD0, P0.3 = RXD0
 
     uint32_t Fdiv;
@@ -70,13 +71,13 @@ void init_com_super(uint32_t baudrate) {
     LPC_UART0->IER = 1; // RBR interrupt enable
 }
 
-static void parser_super(char *msg) {
+static void parser_super(char *msg_super) {
     // parser ici le message.
 }
 
 // overload pour printf
 
-static int uart0_putchar(int c) {
+static int uart0_putchar(int c) { // peut être bufferiser ça si les prints prennent trop de temps.
     while (!(LPC_UART0->LSR & 0x20))
         ; // attente THRE
     LPC_UART0->THR = c;
