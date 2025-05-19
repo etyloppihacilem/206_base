@@ -15,8 +15,8 @@
 
 typedef enum {
     vide      = 0,
-    livraison = 2,
-    vitesse   = 1,
+    livraison = 'P',
+    vitesse   = 'V',
 } t_msg_super_type;
 
 typedef struct {

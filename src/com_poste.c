@@ -9,27 +9,66 @@
 #####################################################################################################################
 */
 
+#include "com_poste.h"
 #include "LPC17xx.h"
+#include "params.h"
+#include "utils.h"
 #include <stdint.h>
 
 #define MSG_LENGTH 32
+#define INBOX_SIZE 4
 
-char    msg_poste[MSG_LENGTH + 1] = { 0 };
-uint8_t current_poste             = 0;
+t_msg_from_poste inbox_super[INBOX_SIZE]   = { 0 };
+char             msg_poste[MSG_LENGTH + 1] = { 0 };
+
+uint8_t c_poste    = 0;
+uint8_t w_poste    = 0;
+uint8_t r_poste    = 0;
+uint8_t last_asked = 0; // last poste asked
+
+static void parsing_poste() {
+    if (last_asked == 0)
+        return;
+    inbox_super[w_poste].poste = last_asked;
+    if (msg_poste[0] == robot) {
+        inbox_poste[w_poste].robo_livr = parse_nb(msg_poste[1], msg_poste[2]);
+        if (inbox_poste[w_poste].robo_livr > nb_robots)
+            return;
+        inbox_poste[w_poste].vit_dest = parse_nb(msg_poste[3], msg_poste[4]);
+        if (!is_state(msg_poste[5]))
+            return;
+        inbox_poste[w_poste].statut = msg_poste[5];
+        inbox_poste[w_poste].type   = robot;
+    } else if (msg_poste[1] == livraison) {
+        if (!is_state(msg_poste[1]))
+            return;
+        inbox_poste[w_poste].robo_livr = msg_poste[1];
+        inbox_poste[w_poste].vit_dest  = parse_nb(msg_poste[2], msg_poste[3]);
+        if (inbox_poste[w_poste].vit_dest > nb_postes)
+            return;
+        inbox_poste[w_poste].type = livraison;
+    } else {
+        return;
+    }
+    if (w_poste == INBOX_SIZE - 1)
+        w_poste = 0;
+    else
+        w_poste++;
+}
 
 void UART1_IRQHandler(void) {
     if (LPC_UART1->IIR & 0x04) // RDA: Receive Data Available
     {
-        if (current_poste == MSG_LENGTH)
-            current_poste = 0; // on supprime le dernier message et recommence
-        char c                     = LPC_UART1->RBR & 0xFF;
-        msg_poste[current_poste++] = c;
-        msg_poste[current_poste]   = '\0'; // to end string
+        if (c_poste == MSG_LENGTH)
+            c_poste = 0; // on supprime le dernier message et recommence
+        char c               = LPC_UART1->RBR & 0xFF;
+        msg_poste[c_poste++] = c;
+        msg_poste[c_poste]   = '\0'; // to end string
     }
-    if (current_poste >= 2 && msg_poste[current_poste - 1] == '\n'
-        && msg_poste[current_poste - 2] == '\r') { // traiter le message
-        current_poste            = 0;
-        msg_poste[current_poste] = '\0'; // to end string
+    if (c_poste >= 2 && msg_poste[c_poste - 1] == '\n' && msg_poste[c_poste - 2] == '\r') { // traiter le message
+        parsing_poste();
+        c_poste            = 0;
+        msg_poste[c_poste] = '\0'; // to end string
     }
 }
 
