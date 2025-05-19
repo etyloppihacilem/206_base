@@ -23,7 +23,7 @@ typedef enum e_duree_pwm {
 } duree_pwm;
 
 typedef enum e_message_type {
-    vitesse             = 0b000,
+    ordre_vitesse       = 0b000,
     chargement_gauche   = 0b001,
     chargement_droite   = 0b010,
     dechargement_gauche = 0b011,
