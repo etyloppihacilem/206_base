@@ -14,7 +14,8 @@
 #include <stdio.h>
 
 typedef enum {
-    livraison = 0,
+    vide      = 0,
+    livraison = 2,
     vitesse   = 1,
 } t_msg_super_type;
 
@@ -27,8 +28,8 @@ typedef struct {
 } t_msg_from_super;
 
 extern t_msg_from_super inbox_super[];
-extern uint8_t          write_super;
-extern uint8_t          read_super;
+extern uint8_t          w_super;
+extern uint8_t          r_super;
 
 void init_com_super(uint32_t baudrate);
 

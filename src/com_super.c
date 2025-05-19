@@ -11,31 +11,71 @@
 
 #include "com_super.h"
 #include "LPC17xx.h"
+#include "params.h"
 #include <stdint.h>
 #include <stdio.h>
 
 #define MSG_LENGTH 32
+#define INBOX_SIZE 4
 
 char             msg_super[MSG_LENGTH + 1] = { 0 };
-t_msg_from_super inbox_super[4]            = { 0 };
+t_msg_from_super inbox_super[INBOX_SIZE]   = { 0 };
 
-uint8_t current_super = 0;
-uint8_t write_super   = 0;
-uint8_t read_super    = 0;
+uint8_t c_super = 0;
+uint8_t w_super = 0;
+uint8_t r_super = 0;
+
+static uint8_t is_number(char c) {
+    return '0' <= c && c <= '9';
+}
+
+static uint8_t is_livraison(char c) {
+    return 'A' <= c && c <= 'D';
+}
+
+static void parsing_super() {
+    if (msg_super[0] != 'R' || !is_number(msg_super[1]) || !is_number(msg_super[2]))
+        return;                                                                    // delete message
+    inbox_super[w_super].robot = (msg_super[1] - '0') * 10 + (msg_super[2] - '0'); // conversion en chiffre
+    if (inbox_super[w_super].robot > nb_robots)
+        return; // delete message
+    if (!is_number(msg_super[4]) || !is_number(msg_super[5]))
+        return;
+    inbox_super[w_super].cible = (msg_super[4] - '0') * 10 + (msg_super[5] - '0'); // conversion en chiffre
+    switch (msg_super[3]) {
+        case 'V':
+            inbox_super[w_super].type = vitesse;
+            break; // plus rien à parser, au revoir
+        case 'P':
+            if (!is_number(msg_super[8]) || !is_number(msg_super[9]) || !is_livraison(msg_super[7]))
+                return;
+            inbox_super[w_super].type      = livraison;
+            inbox_super[w_super].livraison = msg_super[7];
+            inbox_super[w_super].origine   = (msg_super[8] - '0') * 10 + (msg_super[9] - '0');
+            break;
+        default:
+            return; // delete message
+    }
+    // on valide le message
+    if (w_super == INBOX_SIZE - 1)
+        w_super = 0;
+    else
+        w_super++;
+}
 
 void UART0_IRQHandler(void) {
     if (LPC_UART0->IIR & 0x04) // RDA: Receive Data Available
     {
-        if (current_super == MSG_LENGTH)
-            current_super = 0;
-        char c                     = LPC_UART0->RBR & 0xFF;
-        msg_super[current_super++] = c;
-        msg_super[current_super]   = '\0'; // to end string
+        if (c_super == MSG_LENGTH)
+            c_super = 0;
+        char c               = LPC_UART0->RBR & 0xFF;
+        msg_super[c_super++] = c;
+        msg_super[c_super]   = '\0'; // to end string
     }
-    if (current_super >= 2 && msg_super[current_super - 1] == '\n'
-        && msg_super[current_super - 2] == '\r') { // traiter le message
-        current_super            = 0;
-        msg_super[current_super] = '\0'; // to end string
+    if (c_super >= 2 && msg_super[c_super - 1] == '\n' && msg_super[c_super - 2] == '\r') {
+        parsing_super();
+        c_super            = 0;
+        msg_super[c_super] = '\0'; // to end string
     }
 }
 
@@ -69,10 +109,6 @@ void init_com_super(uint32_t baudrate) {
         ;
     NVIC_EnableIRQ(UART0_IRQn);
     LPC_UART0->IER = 1; // RBR interrupt enable
-}
-
-static void parser_super(char *msg_super) {
-    // parser ici le message.
 }
 
 // overload pour printf
