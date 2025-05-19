@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-inline uint8_t is_number(char c) {
+uint8_t is_number(char c) {
     return '0' <= c && c <= '9';
 }
 

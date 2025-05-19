@@ -18,7 +18,7 @@
 #define MSG_LENGTH 32
 #define INBOX_SIZE 4
 
-t_msg_from_poste inbox_super[INBOX_SIZE]   = { 0 };
+t_msg_from_poste inbox_poste[INBOX_SIZE]   = { 0 };
 char             msg_poste[MSG_LENGTH + 1] = { 0 };
 
 uint8_t c_poste    = 0;
@@ -29,7 +29,7 @@ uint8_t last_asked = 0; // last poste asked
 static void parsing_poste() {
     if (last_asked == 0)
         return;
-    inbox_super[w_poste].poste = last_asked;
+    inbox_poste[w_poste].poste = last_asked;
     if (msg_poste[0] == robot) {
         inbox_poste[w_poste].robo_livr = parse_nb(msg_poste[1], msg_poste[2]);
         if (inbox_poste[w_poste].robo_livr > nb_robots)
