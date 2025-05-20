@@ -13,15 +13,14 @@
 #include <stdint.h>
 
 typedef enum {
-    p_vide      = 0,
-    robot     = 'R',
+    p_vide         = 0,
+    robot          = 'R',
     info_livraison = 'P',
 } t_msg_poste_type;
 
 typedef struct {
         t_msg_poste_type type;
         uint8_t          poste;
-        char             msg[8];
         uint8_t          robo_livr; // numéro de robot ou lettre de livraison
         uint8_t          vit_dest;  // vitesse ou destination
         char             statut;    // statut du robot

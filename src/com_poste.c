@@ -118,7 +118,7 @@ t_msg_from_poste *get_poste_msg() {
 /*
  * call this when done with processing message.
  * */
-void post_msg_done() {
+void poste_msg_done() {
     if (r_poste == INBOX_SIZE - 1)
         r_poste = 0;
     else

@@ -10,6 +10,7 @@
 
 #include "params.h"
 #include "LPC17xx.h"
+#include "com_super.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -19,10 +20,10 @@
 uint8_t nb_robots = 0; // OPTI: peut être passer ça en static
 uint8_t nb_postes = 0;
 
-uint8_t read_value(uint8_t y) {   // OPTI: peut être passer ça en static
+uint8_t read_value(uint8_t y) { // OPTI: peut être passer ça en static
     uint32_t ret = 1 << (17 + y);
 
-    LPC_GPIO0->FIOPIN &= ~ret; // on met la ligne où lire au niveau bas
+    LPC_GPIO0->FIOPIN &= ~ret;      // on met la ligne où lire au niveau bas
     while (LPC_GPIO0->FIOPIN & ret) // il faut attendre que le GPIO soit niveau bas
         ;
     // lecture de la valeur
@@ -41,6 +42,5 @@ void init_params() {
 void read_params() {
     nb_robots = read_value(0);
     nb_postes = read_value(1);
-    // LPC_GPIO0->FIOPIN &= ~write_tab[MAT_HEIGHT]; // to prevent pull down consumption
-    printf("CFGR%02dP%02d\r\n", nb_robots, nb_postes);
+    send_params();
 }

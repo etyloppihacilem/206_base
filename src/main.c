@@ -11,54 +11,118 @@
 #include "LPC17xx.h" // Définitions registres périphériques
 #include "com_poste.h"
 #include "com_super.h"
+#include "livraisons.h"
 #include "params.h"
 #include "porteuse.h"
 #include "utils.h"
 
 #define MAX_ROBOTS 16
+#define MAX_LIVRAISONS 16
 
 uint8_t vitesse_actuelle[MAX_ROBOTS] = { 0 };
 uint8_t vitesse_voulue[MAX_ROBOTS]   = { 0 };
 uint8_t enlevement[MAX_ROBOTS]       = { 0 };
 uint8_t livraison[MAX_ROBOTS]        = { 0 };
-uint8_t en_cours[MAX_ROBOTS]         = { 0 };
+uint8_t en_cours[MAX_ROBOTS]         = { 0 }; // contient la lettre de la livraison en cours
+
+waitlist_livraisons fifo_livraisons[16] = { 0 };
+uint8_t             w_livr              = 0;
+uint8_t             r_livr              = 0;
+
+/*
+ * returns 0 if livraison if found.
+ * */
+uint8_t recherche_livraison(uint8_t origine, uint8_t destination, char lettre) {
+    uint8_t i;
+    for (i = 1; i <= nb_robots; i++) {
+        if (en_cours[i])
+            continue;
+        enlevement[i] = origine;
+        livraison[i]  = destination;
+        en_cours[i]   = lettre;
+        send_to_rob(cote_depot(lettre) ? chargement_droite : chargement_gauche, i, origine);
+        i = 0;
+    }
+    return i;
+}
+
+void save_livraison(uint8_t origine, uint8_t destination, char lettre) {
+    fifo_livraisons[w_livr].origine     = origine;
+    fifo_livraisons[w_livr].destination = destination;
+    fifo_livraisons[w_livr].livraison   = lettre;
+    if (w_livr == MAX_LIVRAISONS - 1)
+        w_livr = 0;
+    else
+        w_livr++;
+}
+
+void process_super(t_msg_from_super *todo) {
+    if (!todo)
+        return;
+    switch (todo->type) {
+        case ordre_livraison:
+            if (recherche_livraison(todo->cible, todo->destination, todo->livraison))
+                // on sauvegarde la livraison parce qu'aucun robot n'est dispo
+                save_livraison(todo->cible, todo->destination, todo->livraison);
+            break;
+        case vitesse:
+            if (todo->robot == 0)
+                break;
+            vitesse_voulue[todo->robot - 1] = todo->cible;        // on enregistre
+            send_to_rob(ordre_vitesse, todo->robot, todo->cible); // on ordonne
+        default:;
+    }
+    super_msg_done(); // on supprime même si pas de robot dispo (feature)
+}
+
+void process_poste(t_msg_from_poste *todo) {
+    uint8_t rob;
+    if (!todo)
+        return;
+    send_poste_info(todo);
+    switch (todo->type) {
+        case robot:
+            rob                   = todo->robo_livr;
+            vitesse_actuelle[rob] = todo->vit_dest;
+            if (todo->statut == 'C' && enlevement[rob]) {
+                enlevement[rob] = 0;
+                send_to_rob(
+                    cote_reception(en_cours[rob]) ? dechargement_droite : dechargement_gauche, rob, livraison[rob]
+                );
+            }
+            if (todo->statut == 'D' && (livraison[rob] || en_cours[rob])) {
+                livraison[rob] = 0;
+                en_cours[rob]  = 0;
+            }
+        case info_livraison:
+            if (recherche_livraison(todo->poste, todo->vit_dest, todo->robo_livr))
+                save_livraison(todo->poste, todo->vit_dest, todo->robo_livr);
+        default:;
+    }
+    poste_msg_done();
+}
+
+void process_livraison() {
+    if (w_livr == r_livr)
+        return;
+    if (!recherche_livraison(
+            fifo_livraisons[r_livr].origine, fifo_livraisons[r_livr].destination, fifo_livraisons[r_livr].livraison
+        )) {
+        if (r_livr == MAX_LIVRAISONS - 1)
+            r_livr = 0;
+        else
+            r_livr++;
+    }
+}
 
 int main(void) {
     init_com_super(9600);
     init_params();
     init_porteuse();
 
-    t_msg_from_super *super_todo;
-    t_msg_from_poste *poste_todo;
     while (1) {
-        super_todo = get_super_msg(); // message from super
-        if (super_todo) {
-            switch (super_todo->type) {
-                case ordre_livraison:
-                    for (uint8_t i = 1; i <= nb_robots; i++) {
-                        if (enlevement[i] || livraison[i])
-                            continue;
-                        enlevement[i] = super_todo->cible;
-                        livraison[i]  = super_todo->destination;
-                        en_cours[i]   = super_todo->livraison;
-                        send_to_rob(
-                            cote_depot(super_todo->livraison) ? chargement_droite : chargement_gauche,
-                            super_todo->robot, super_todo->cible
-                        );
-                        super_msg_done();
-                    }
-                    break;
-                case vitesse:
-                    if (super_todo->robot == 0)
-                        break;
-                    vitesse_voulue[super_todo->robot - 1] = super_todo->cible;        // on enregistre
-                    send_to_rob(ordre_vitesse, super_todo->robot, super_todo->cible); // on ordonne
-                    super_msg_done();
-                default:;
-            }
-        }
-        poste_todo = get_poste_msg(); // message from poste
-        if (poste_todo)
-            poste_msg_done();
+        process_super(get_super_msg()); // message from super
+        process_poste(get_poste_msg()); // message from poste
+        process_livraison();            // processing waiting livraisons
     }
 }

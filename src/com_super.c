@@ -10,11 +10,11 @@
 */
 
 #include "com_super.h"
+#include "com_poste.h"
 #include "LPC17xx.h"
 #include "params.h"
 #include "utils.h"
 #include <stdint.h>
-#include <stdio.h>
 
 #define MSG_LENGTH 32
 #define INBOX_SIZE 4
@@ -73,6 +73,13 @@ void UART0_IRQHandler(void) {
     }
 }
 
+static int uart0_putchar(int c) { // peut être bufferiser ça si les prints prennent trop de temps.
+    while (!(LPC_UART0->LSR & 0x20))
+        ; // attente THRE
+    LPC_UART0->THR = c;
+    return c;
+}
+
 void init_com_super(uint32_t baudrate) {
     LPC_SC->PCONP |= (1 << 3); // on active l'horloge et le power de UART 0
 
@@ -117,30 +124,46 @@ t_msg_from_super *get_super_msg() {
 /*
  * call this when done with processing message.
  * */
-void poste_msg_done() {
+void super_msg_done() {
     if (r_super == INBOX_SIZE - 1)
         r_super = 0;
     else
         r_super++;
 }
 
-// overload pour printf
-
-static int uart0_putchar(int c) { // peut être bufferiser ça si les prints prennent trop de temps.
-    while (!(LPC_UART0->LSR & 0x20))
-        ; // attente THRE
-    LPC_UART0->THR = c;
-    return c;
+void send_poste_info(t_msg_from_poste *msg) {
+    uart0_putchar('P');
+    uart0_putchar(msg->poste / 10 + '0');
+    uart0_putchar(msg->poste % 10 + '0');
+    switch (msg->type) {
+        case robot:
+            uart0_putchar('R');
+            uart0_putchar(msg->robo_livr / 10 + '0');
+            uart0_putchar(msg->robo_livr % 10 + '0');
+            uart0_putchar(msg->vit_dest / 10 + '0');
+            uart0_putchar(msg->vit_dest % 10 + '0');
+            uart0_putchar(msg->statut);
+            break;
+        case info_livraison:
+            uart0_putchar('P');
+            uart0_putchar(msg->robo_livr);
+            uart0_putchar('P');
+            uart0_putchar(msg->vit_dest / 10 + '0');
+            uart0_putchar(msg->vit_dest % 10 + '0');
+        default:;
+    }
+    uart0_putchar('\r');
+    uart0_putchar('\n');
 }
 
-int fputc(int c, FILE *f) { // not needed for gcc compiler
-    (void) f;               // unused
-    return uart0_putchar(c);
-}
-
-int _write(int file, char *ptr, int len) {
-    (void) file; // unused
-    for (int i = 0; i < len; i++)
-        uart0_putchar(ptr[i]);
-    return len;
+void send_params() {
+    uart0_putchar('C');
+    uart0_putchar('R');
+    uart0_putchar(nb_robots / 10 + '0');
+    uart0_putchar(nb_robots % 10 + '0');
+    uart0_putchar('P');
+    uart0_putchar(nb_postes / 10 + '0');
+    uart0_putchar(nb_postes % 10 + '0');
+    uart0_putchar('\r');
+    uart0_putchar('\n');
 }
