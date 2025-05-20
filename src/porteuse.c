@@ -58,7 +58,7 @@ void init_porteuse() {
     NVIC_EnableIRQ(PWM1_IRQn);
 }
 
-void send_message(uint8_t type, uint8_t robot, uint8_t argument) {
+void send_to_rob(uint8_t type, uint8_t robot, uint8_t argument) {
     // strucutre is ROBO TYP ARGUMEN
     uint16_t message    = ((robot & 0xF) << 10) | ((type & 0x7) << 7) | (argument & 0x3F);
     uint16_t temp_write = write_index;

@@ -39,14 +39,14 @@ static void parsing_poste() {
             return;
         inbox_poste[w_poste].statut = msg_poste[5];
         inbox_poste[w_poste].type   = robot;
-    } else if (msg_poste[1] == livraison) {
+    } else if (msg_poste[1] == info_livraison) {
         if (!is_state(msg_poste[1]))
             return;
         inbox_poste[w_poste].robo_livr = msg_poste[1];
         inbox_poste[w_poste].vit_dest  = parse_nb(msg_poste[2], msg_poste[3]);
         if (inbox_poste[w_poste].vit_dest > nb_postes)
             return;
-        inbox_poste[w_poste].type = livraison;
+        inbox_poste[w_poste].type = info_livraison;
     } else {
         return;
     }
@@ -106,8 +106,23 @@ void init_com_poste(uint32_t baudrate) {
     LPC_UART1->IER = 1; // RBR interrupt enable
 }
 
-static void parser_poste(char *msg_poste) {
-    // parser ici le message.
+/*
+ * returns message to treat, or NULL
+ * */
+t_msg_from_poste *get_poste_msg() {
+    if (r_poste == w_poste)
+        return 0;
+    return inbox_poste + w_poste; // on retourne un pointeur sur le message
+}
+
+/*
+ * call this when done with processing message.
+ * */
+void post_msg_done() {
+    if (r_poste == INBOX_SIZE - 1)
+        r_poste = 0;
+    else
+        r_poste++;
 }
 
 static int uart1_putchar(int c) { // peut être bufferiser ça si les prints prennent trop de temps.

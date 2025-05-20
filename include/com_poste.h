@@ -13,9 +13,9 @@
 #include <stdint.h>
 
 typedef enum {
-    vide      = 0,
+    p_vide      = 0,
     robot     = 'R',
-    livraison = 'P',
+    info_livraison = 'P',
 } t_msg_poste_type;
 
 typedef struct {
@@ -27,8 +27,6 @@ typedef struct {
         char             statut;    // statut du robot
 } t_msg_from_poste;
 
-extern t_msg_from_poste inbox_poste[];
-extern uint8_t          w_poste;
-extern uint8_t          r_poste;
-
-void init_com_poste(uint32_t baudrate);
+void              init_com_poste(uint32_t baudrate);
+t_msg_from_poste *get_poste_msg();
+void              poste_msg_done();

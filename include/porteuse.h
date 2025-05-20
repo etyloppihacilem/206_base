@@ -31,4 +31,4 @@ typedef enum e_message_type {
 } message_type;
 
 void init_porteuse();
-void send_message(uint8_t type, uint8_t robot, uint8_t argument);
+void send_to_rob(uint8_t type, uint8_t robot, uint8_t argument);

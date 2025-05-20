@@ -37,13 +37,13 @@ static void parsing_super() {
         case vitesse:
             inbox_super[w_super].type = vitesse;
             break; // plus rien à parser, au revoir
-        case livraison:
+        case ordre_livraison:
             if (!is_livraison(msg_super[7]))
                 return;
-            inbox_super[w_super].type      = livraison;
+            inbox_super[w_super].type      = ordre_livraison;
             inbox_super[w_super].livraison = msg_super[7];
-            inbox_super[w_super].origine   = parse_nb(msg_super[8], msg_super[9]);
-            if (inbox_super[w_super].origine > nb_postes || inbox_super[w_super].cible > nb_postes)
+            inbox_super[w_super].destination   = parse_nb(msg_super[8], msg_super[9]);
+            if (inbox_super[w_super].destination > nb_postes || inbox_super[w_super].cible > nb_postes)
                 ;
             return;
             break;
@@ -103,6 +103,25 @@ void init_com_super(uint32_t baudrate) {
         ;
     NVIC_EnableIRQ(UART0_IRQn);
     LPC_UART0->IER = 1; // RBR interrupt enable
+}
+
+/*
+ * returns message to treat, or NULL
+ * */
+t_msg_from_super *get_super_msg() {
+    if (r_super == w_super)
+        return 0;
+    return inbox_super + w_super; // on retourne un pointeur sur le message
+}
+
+/*
+ * call this when done with processing message.
+ * */
+void poste_msg_done() {
+    if (r_super == INBOX_SIZE - 1)
+        r_super = 0;
+    else
+        r_super++;
 }
 
 // overload pour printf

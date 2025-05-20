@@ -14,24 +14,22 @@
 #include <stdio.h>
 
 typedef enum {
-    vide      = 0,
-    livraison = 'P',
+    s_vide      = 0,
+    ordre_livraison = 'P',
     vitesse   = 'V',
 } t_msg_super_type;
 
 typedef struct {
         t_msg_super_type type;
         uint8_t          robot;
-        uint8_t          cible;     // soit la vitesse, soit le poste de destination
+        uint8_t          cible;     // soit la vitesse, soit le poste d'enlevement
         char             livraison; // lettre de livraison
-        uint8_t          origine;   // le poste d'origine de la livraison
+        uint8_t          destination;   // le poste de destination de la livraison
 } t_msg_from_super;
 
-extern t_msg_from_super inbox_super[];
-extern uint8_t          w_super;
-extern uint8_t          r_super;
-
-void init_com_super(uint32_t baudrate);
+void              init_com_super(uint32_t baudrate);
+t_msg_from_super *get_super_msg();
+void              super_msg_done();
 
 int fputc(int c, FILE *f); // needed for printf, do not use this
 int _write(int file, char *ptr, int len);

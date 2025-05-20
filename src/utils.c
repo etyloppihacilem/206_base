@@ -18,6 +18,35 @@ uint8_t is_livraison(char c) {
     return 'A' <= c && c <= 'D';
 }
 
+/*
+ * Tableau des livraisons et des cotés :
+ *
+ *    | depot | reception
+ * ---|-------|-----------
+ *  A |   D   |     D
+ *  B |   D   |     G
+ *  C |   G   |     G
+ *  D |   G   |     D
+ *
+ *  0 pour D droite
+ *  1 pour G gauche
+ *
+ * */
+
+uint8_t cote_depot(char c) {
+    // retourne 0 pour droite, 1 pour gauche
+    if (c == 'A' || c == 'B')
+        return 0;
+    return 1;
+}
+
+uint8_t cote_reception(char c) {
+    // retourne 0 pour droite, 1 pour gauche
+    if (c == 'A' || c == 'D')
+        return 0;
+    return 1;
+}
+
 uint8_t is_state(char c) {
     return ('C' <= c && c <= 'E') || c == 'L';
 }
