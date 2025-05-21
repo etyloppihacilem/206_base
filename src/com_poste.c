@@ -21,28 +21,30 @@
 t_msg_from_poste inbox_poste[INBOX_SIZE]   = { 0 };
 char             msg_poste[MSG_LENGTH + 1] = { 0 };
 
-uint8_t c_poste    = 0;
-uint8_t w_poste    = 0;
-uint8_t r_poste    = 0;
-uint8_t last_asked = 0; // last poste asked
+static uint8_t c_poste      = 0;
+static uint8_t w_poste      = 0;
+static uint8_t r_poste      = 0;
+static uint8_t last_asked   = 0; // last poste asked
+static uint8_t poste_to_ask = 1;
 
 static void parsing_poste() {
     if (last_asked == 0)
         return;
     inbox_poste[w_poste].poste = last_asked;
+    last_asked                 = 0;
     if (msg_poste[0] == robot) {
-        inbox_poste[w_poste].robo_livr = parse_nb(msg_poste[1], msg_poste[2]);
+        inbox_poste[w_poste].robo_livr = parse_hex(msg_poste[1]);
         if (inbox_poste[w_poste].robo_livr > nb_robots)
             return;
-        inbox_poste[w_poste].vit_dest = parse_nb(msg_poste[3], msg_poste[4]);
+        inbox_poste[w_poste].vit_dest = parse_nb(msg_poste[2], msg_poste[3]);
         if (!is_state(msg_poste[5]))
             return;
         inbox_poste[w_poste].statut = msg_poste[5];
         inbox_poste[w_poste].type   = robot;
     } else if (msg_poste[1] == info_livraison) {
-        if (!is_state(msg_poste[1]))
+        if (!is_state(msg_poste[0]))
             return;
-        inbox_poste[w_poste].robo_livr = msg_poste[1];
+        inbox_poste[w_poste].robo_livr = msg_poste[0];
         inbox_poste[w_poste].vit_dest  = parse_nb(msg_poste[2], msg_poste[3]);
         if (inbox_poste[w_poste].vit_dest > nb_postes)
             return;
@@ -130,4 +132,17 @@ static int uart1_putchar(int c) { // peut être bufferiser ça si les prints pre
         ; // attente THRE
     LPC_UART1->THR = c;
     return c;
+}
+
+void poll_poste() {
+    if (last_asked) // si un poste bloque, il n'y a plus aucune info des autres postes (feature, comme ça on sait quel
+        return;     // poste à planté...)
+    uart1_putchar('@');
+    uart1_putchar('T');
+    uart1_putchar(poste_to_ask / 10 + '0');
+    uart1_putchar(poste_to_ask % 10 + '0');
+    uart1_putchar('\r');
+    uart1_putchar('\n');
+    if (++poste_to_ask > nb_postes)
+        poste_to_ask = 1;
 }

@@ -57,3 +57,12 @@ uint8_t parse_nb(char a, char b) {
         return -1; // 255, ce qui est toujours plus grand que le nombre de robots ou de postes.
     return (a - '0') * 10 + (b - '0');
 }
+
+uint8_t parse_hex(char c) {
+    if ('A' <= c && c <= 'F')
+        return c - 'A' + 10;
+    if ('0' <= c && c <= '9')
+        return c - '0';
+    else
+        return 0;
+}

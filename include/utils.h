@@ -17,3 +17,4 @@ uint8_t is_state(char c);
 uint8_t parse_nb(char a, char b);
 uint8_t cote_depot(char c);
 uint8_t cote_reception(char c);
+uint8_t parse_hex(char c);

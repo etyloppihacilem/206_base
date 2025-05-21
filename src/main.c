@@ -118,11 +118,13 @@ void process_livraison() {
 int main(void) {
     init_com_super(9600);
     init_params();
+    read_params(); // on initilise le nombre de robots et de postes
     init_porteuse();
 
     while (1) {
         process_super(get_super_msg()); // message from super
         process_poste(get_poste_msg()); // message from poste
         process_livraison();            // processing waiting livraisons
+        poll_poste();
     }
 }
