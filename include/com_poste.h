@@ -16,6 +16,7 @@ typedef enum {
     p_vide         = 0,
     robot          = 'R',
     info_livraison = 'P',
+    EOT            = 'N',
 } t_msg_poste_type;
 
 typedef struct {

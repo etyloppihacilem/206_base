@@ -31,7 +31,6 @@ static void parsing_poste() {
     if (last_asked == 0)
         return;
     inbox_poste[w_poste].poste = last_asked;
-    last_asked                 = 0;
     if (msg_poste[0] == robot) {
         inbox_poste[w_poste].robo_livr = parse_hex(msg_poste[1]);
         if (inbox_poste[w_poste].robo_livr > nb_robots)
@@ -49,6 +48,9 @@ static void parsing_poste() {
         if (inbox_poste[w_poste].vit_dest > nb_postes)
             return;
         inbox_poste[w_poste].type = info_livraison;
+    } else if (msg_poste[0] == EOT) { // End Of Transmission : NULL\r\n
+        last_asked = 0;
+        return;
     } else {
         return;
     }
@@ -152,6 +154,7 @@ void TIMER0_IRQHandler() {
     uart1_putchar(poste_to_ask % 10 + '0');
     uart1_putchar('\r');
     uart1_putchar('\n');
+    last_asked = poste_to_ask;
     if (++poste_to_ask > nb_postes)
         poste_to_ask = 1;
 }
