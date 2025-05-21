@@ -16,6 +16,8 @@
 #include "porteuse.h"
 #include "utils.h"
 
+#define AUTOMATIQUE // comment to disable automatic livraison attribution
+
 #define MAX_ROBOTS 16
 #define MAX_LIVRAISONS 16
 
@@ -24,10 +26,6 @@ uint8_t vitesse_voulue[MAX_ROBOTS]   = { 0 };
 uint8_t enlevement[MAX_ROBOTS]       = { 0 };
 uint8_t livraison[MAX_ROBOTS]        = { 0 };
 uint8_t en_cours[MAX_ROBOTS]         = { 0 }; // contient la lettre de la livraison en cours
-
-waitlist_livraisons fifo_livraisons[16] = { 0 };
-uint8_t             w_livr              = 0;
-uint8_t             r_livr              = 0;
 
 /*
  * returns 0 if livraison if found.
@@ -46,6 +44,12 @@ uint8_t recherche_livraison(uint8_t origine, uint8_t destination, char lettre) {
     return i;
 }
 
+#ifdef AUTOMATIQUE
+
+waitlist_livraisons fifo_livraisons[16] = { 0 };
+uint8_t             w_livr              = 0;
+uint8_t             r_livr              = 0;
+
 void save_livraison(uint8_t origine, uint8_t destination, char lettre) {
     fifo_livraisons[w_livr].origine     = origine;
     fifo_livraisons[w_livr].destination = destination;
@@ -56,14 +60,33 @@ void save_livraison(uint8_t origine, uint8_t destination, char lettre) {
         w_livr++;
 }
 
+void process_livraison() {
+    if (w_livr == r_livr)
+        return;
+    if (!recherche_livraison(
+            fifo_livraisons[r_livr].origine, fifo_livraisons[r_livr].destination, fifo_livraisons[r_livr].livraison
+        )) {
+        if (r_livr == MAX_LIVRAISONS - 1)
+            r_livr = 0;
+        else
+            r_livr++;
+    }
+}
+
+#endif
+
 void process_super(t_msg_from_super *todo) {
     if (!todo)
         return;
     switch (todo->type) {
         case ordre_livraison:
+#ifdef AUTOMATIQUE
             if (recherche_livraison(todo->cible, todo->destination, todo->livraison))
                 // on sauvegarde la livraison parce qu'aucun robot n'est dispo
                 save_livraison(todo->cible, todo->destination, todo->livraison);
+#else
+            recherche_livraison(todo->cible, todo->destination, todo->livraison);
+#endif
             break;
         case vitesse:
             if (todo->robot == 0)
@@ -84,35 +107,25 @@ void process_poste(t_msg_from_poste *todo) {
         case robot:
             rob                   = todo->robo_livr;
             vitesse_actuelle[rob] = todo->vit_dest;
-            if (todo->statut == 'C' && enlevement[rob]) {
+            if (todo->statut == 'C' && enlevement[rob]) { // si colispris
                 enlevement[rob] = 0;
                 send_to_rob(
                     cote_reception(en_cours[rob]) ? dechargement_droite : dechargement_gauche, rob, livraison[rob]
                 );
             }
-            if (todo->statut == 'D' && (livraison[rob] || en_cours[rob])) {
+            if (todo->statut == 'D' && (livraison[rob] || en_cours[rob])) { // si dispo après livraison
                 livraison[rob] = 0;
                 en_cours[rob]  = 0;
             }
+            break;
+#ifdef AUTOMATIQUE
         case info_livraison:
             if (recherche_livraison(todo->poste, todo->vit_dest, todo->robo_livr))
                 save_livraison(todo->poste, todo->vit_dest, todo->robo_livr);
+#endif
         default:;
     }
     poste_msg_done();
-}
-
-void process_livraison() {
-    if (w_livr == r_livr)
-        return;
-    if (!recherche_livraison(
-            fifo_livraisons[r_livr].origine, fifo_livraisons[r_livr].destination, fifo_livraisons[r_livr].livraison
-        )) {
-        if (r_livr == MAX_LIVRAISONS - 1)
-            r_livr = 0;
-        else
-            r_livr++;
-    }
 }
 
 int main(void) {
@@ -124,7 +137,9 @@ int main(void) {
     while (1) {
         process_super(get_super_msg()); // message from super
         process_poste(get_poste_msg()); // message from poste
+#ifdef AUTOMATIQUE
         process_livraison();            // processing waiting livraisons
+#endif
         poll_poste();
     }
 }
