@@ -10,8 +10,8 @@
 */
 
 #include "com_super.h"
-#include "com_poste.h"
 #include "LPC17xx.h"
+#include "com_poste.h"
 #include "params.h"
 #include "utils.h"
 #include <stdint.h>
@@ -40,9 +40,9 @@ static void parsing_super() {
         case ordre_livraison:
             if (!is_livraison(msg_super[7]))
                 return;
-            inbox_super[w_super].type      = ordre_livraison;
-            inbox_super[w_super].livraison = msg_super[7];
-            inbox_super[w_super].destination   = parse_nb(msg_super[8], msg_super[9]);
+            inbox_super[w_super].type        = ordre_livraison;
+            inbox_super[w_super].livraison   = msg_super[7];
+            inbox_super[w_super].destination = parse_nb(msg_super[8], msg_super[9]);
             if (inbox_super[w_super].destination > nb_postes || inbox_super[w_super].cible > nb_postes)
                 ;
             return;

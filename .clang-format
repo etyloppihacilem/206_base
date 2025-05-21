@@ -187,7 +187,7 @@ KeepEmptyLines:
   AtStartOfFile:   true
 KeepFormFeed:    false
 LambdaBodyIndentation: Signature
-LineEnding:      CRLF
+LineEnding:      LF
 MacroBlockBegin: ''
 MacroBlockEnd:   ''
 MainIncludeChar: Quote

@@ -138,7 +138,7 @@ int main(void) {
         process_super(get_super_msg()); // message from super
         process_poste(get_poste_msg()); // message from poste
 #ifdef AUTOMATIQUE
-        process_livraison();            // processing waiting livraisons
+        process_livraison(); // processing waiting livraisons
 #endif
         poll_poste();
     }
