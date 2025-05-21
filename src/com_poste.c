@@ -112,8 +112,8 @@ void init_com_poste(uint32_t baudrate) {
     // Activation du polling
     // Pas d'utilisation de systick parce qu'on veut que l'int passe par le NVIC et pas au dessus
     LPC_TIM0->MCR |= 1 | 1 << 1;
-    LPC_TIM0->MR0 = 83333; // ~300Hz
-    LPC_TIM0->TCR = 1;
+    LPC_TIM0->MR0  = 83333; // ~300Hz
+    LPC_TIM0->TCR  = 1;
     NVIC_EnableIRQ(TIMER0_IRQn);
 }
 
@@ -142,7 +142,6 @@ static int uart1_putchar(int c) { // peut être bufferiser ça si les prints pre
     LPC_UART1->THR = c;
     return c;
 }
-
 
 void TIMER0_IRQHandler() {
     LPC_TIM0->IR = 1;

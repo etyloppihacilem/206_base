@@ -140,6 +140,5 @@ int main(void) {
 #ifdef AUTOMATIQUE
         process_livraison(); // processing waiting livraisons
 #endif
-        poll_poste();
     }
 }
