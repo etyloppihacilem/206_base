@@ -106,6 +106,13 @@ void init_com_poste(uint32_t baudrate) {
         ;
     NVIC_EnableIRQ(UART1_IRQn);
     LPC_UART1->IER = 1; // RBR interrupt enable
+
+    // Activation du polling
+    // Pas d'utilisation de systick parce qu'on veut que l'int passe par le NVIC et pas au dessus
+    LPC_TIM0->MCR |= 1 | 1 << 1;
+    LPC_TIM0->MR0 = 83333; // ~300Hz
+    LPC_TIM0->TCR = 1;
+    NVIC_EnableIRQ(TIMER0_IRQn);
 }
 
 /*
@@ -134,7 +141,9 @@ static int uart1_putchar(int c) { // peut être bufferiser ça si les prints pre
     return c;
 }
 
-void poll_poste() {
+
+void TIMER0_IRQHandler() {
+    LPC_TIM0->IR = 1;
     if (last_asked) // si un poste bloque, il n'y a plus aucune info des autres postes (feature, comme ça on sait quel
         return;     // poste à planté...)
     uart1_putchar('@');
