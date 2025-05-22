@@ -1,4 +1,4 @@
-/* #####################################################################################################################
+/* ##################################646f75627420796f7572206f776e206578697374656e6365###################################
 
                """          com_poste.c
         -\-    _|__
@@ -6,8 +6,7 @@
          \     /(((/        by hmelica
           \___/)))/         hmelica@student.42.fr
 
-#####################################################################################################################
-*/
+##################################################################################################################### */
 
 #include "com_poste.h"
 #include "LPC17xx.h"
@@ -79,6 +78,46 @@ void UART1_IRQHandler(void) {
     }
 }
 
+static uint32_t get_uart1_pclk(void) {
+    uint32_t             sel        = (LPC_SC->PCLKSEL0 >> 8) & 0x03;
+    static const uint8_t div_lut[4] = { 4, 1, 2, 8 };
+    return SystemCoreClock / div_lut[sel];
+}
+
+/*
+ * Il faut une précision de l'horloge de UART1 pour pouvoir monter à 115200 bauds.
+ * Pour 9600, pas besoin d'un calcul si compliqué.
+ * */
+void set_uart1_baud(uint32_t baud) {
+    uint32_t pclk     = get_uart1_pclk();
+    uint32_t best_dll = 0, best_mul = 1, best_divadd = 0;
+    uint32_t best_err = 0xFFFFFFFF;
+
+    for (uint32_t mul = 1; mul <= 15; ++mul) {
+        for (uint32_t divadd = 0; divadd < mul; ++divadd) {
+            uint32_t dll = (pclk + 8 * baud * mul) / (16 * baud * mul) - divadd; // arrondi
+            if (dll == 0 || dll > 0xFFFF)
+                continue;
+
+            uint32_t real = pclk / (16 * (dll + ((float) divadd / mul)));
+            uint32_t err  = (real > baud) ? real - baud : baud - real;
+
+            if (err < best_err) {
+                best_err    = err;
+                best_dll    = dll;
+                best_mul    = mul;
+                best_divadd = divadd;
+            }
+        }
+    }
+
+    LPC_UART1->LCR |= 0x80; // DLAB = 1
+    LPC_UART1->DLM  = best_dll >> 8;
+    LPC_UART1->DLL  = best_dll & 0xFF;
+    LPC_UART1->FDR  = (best_mul << 4) | best_divadd;
+    LPC_UART1->LCR &= ~0x80; // DLAB = 0
+}
+
 void init_com_poste(uint32_t baudrate) {
     LPC_SC->PCONP |= (1 << 4); // on active l'horloge et le power de UART 1
 
@@ -87,21 +126,11 @@ void init_com_poste(uint32_t baudrate) {
     LPC_PINCON->PINSEL1 &= ~3;
     LPC_PINCON->PINSEL1 |= 1; // P0.16 = RXD1
 
-    uint32_t Fdiv;
-    uint32_t pclk;
-
-    // Le PCLK de UART1 est par défaut à CCLK / 4
-    pclk = SystemCoreClock / 4;
-
     // Désactiver interruptions pendant init
     LPC_UART1->IER = 0;
 
     // 8 bits, 1 stop bit, pas de parité
-    LPC_UART1->LCR = 0x83; // DLAB = 1 pour accéder à DLL/DLM
-
-    Fdiv           = pclk / (16 * baudrate);
-    LPC_UART1->DLM = Fdiv / 256;
-    LPC_UART1->DLL = Fdiv % 256;
+    set_uart1_baud(baudrate);
 
     LPC_UART1->LCR = 0x03; // 8 bits transmit
     LPC_UART1->FCR = 0x07; // Activer FIFO, reset RX/TX

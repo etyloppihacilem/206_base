@@ -1,8 +1,8 @@
-/* #####################################################################################################################
+/* ##################################646f75627420796f7572206f776e206578697374656e6365###################################
 
                """          main.c
         -\-    _|__
-         |\___/  . \        Created on 16 May. 2025 at 09:16
+         |\___/  . \        Created on 22 May. 2025 at 22:02
          \     /(((/        by hmelica
           \___/)))/         hmelica@student.42.fr
 
@@ -133,7 +133,7 @@ int main(void) {
     init_com_super(9600);
     init_params();
     read_params(); // on initilise le nombre de robots et de postes
-    init_com_poste(9600);
+    init_com_poste(115200);
     init_porteuse();
 
     while (1) {
