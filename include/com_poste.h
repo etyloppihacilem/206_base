@@ -30,3 +30,4 @@ typedef struct {
 void              init_com_poste(uint32_t baudrate);
 t_msg_from_poste *get_poste_msg();
 void              poste_msg_done();
+void              poll_poste();

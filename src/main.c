@@ -40,6 +40,7 @@ uint8_t recherche_livraison(uint8_t origine, uint8_t destination, char lettre) {
         en_cours[i]   = lettre;
         send_to_rob(cote_depot(lettre) ? chargement_droite : chargement_gauche, i, origine);
         i = 0;
+        break;
     }
     return i;
 }
@@ -132,6 +133,7 @@ int main(void) {
     init_com_super(9600);
     init_params();
     read_params(); // on initilise le nombre de robots et de postes
+    init_com_poste(9600);
     init_porteuse();
 
     while (1) {
@@ -140,5 +142,6 @@ int main(void) {
 #ifdef AUTOMATIQUE
         process_livraison(); // processing waiting livraisons
 #endif
+        poll_poste();
     }
 }

@@ -32,3 +32,4 @@ t_msg_from_super *get_super_msg();
 void              super_msg_done();
 void              send_poste_info(t_msg_from_poste *msg);
 void              send_params();
+void              debug_write(const char *str);

@@ -38,14 +38,13 @@ static void parsing_super() {
             inbox_super[w_super].type = vitesse;
             break; // plus rien à parser, au revoir
         case ordre_livraison:
-            if (!is_livraison(msg_super[7]))
+            if (!is_livraison(msg_super[6]))
                 return;
             inbox_super[w_super].type        = ordre_livraison;
-            inbox_super[w_super].livraison   = msg_super[7];
+            inbox_super[w_super].livraison   = msg_super[6];
             inbox_super[w_super].destination = parse_nb(msg_super[8], msg_super[9]);
             if (inbox_super[w_super].destination > nb_postes || inbox_super[w_super].cible > nb_postes)
-                ;
-            return;
+                return;
             break;
         default:
             return; // delete message
@@ -62,7 +61,9 @@ void UART0_IRQHandler(void) {
     {
         if (c_super == MSG_LENGTH)
             c_super = 0;
-        char c               = LPC_UART0->RBR & 0xFF;
+        char c = LPC_UART0->RBR & 0xFF;
+        if (c == '\0')
+            return;
         msg_super[c_super++] = c;
         msg_super[c_super]   = '\0'; // to end string
     }
@@ -109,6 +110,7 @@ void init_com_super(uint32_t baudrate) {
     while (!(LPC_UART0->LSR & 0x20))
         ;
     NVIC_EnableIRQ(UART0_IRQn);
+    NVIC_SetPriority(UART0_IRQn, 5);
     LPC_UART0->IER = 1; // RBR interrupt enable
 }
 
@@ -118,7 +120,7 @@ void init_com_super(uint32_t baudrate) {
 t_msg_from_super *get_super_msg() {
     if (r_super == w_super)
         return 0;
-    return inbox_super + w_super; // on retourne un pointeur sur le message
+    return inbox_super + r_super; // on retourne un pointeur sur le message
 }
 
 /*
@@ -166,4 +168,9 @@ void send_params() {
     uart0_putchar(nb_postes % 10 + '0');
     uart0_putchar('\r');
     uart0_putchar('\n');
+}
+
+void debug_write(const char *str) {
+    while (*str != '\0')
+        uart0_putchar(*(str++));
 }

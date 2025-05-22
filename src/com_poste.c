@@ -26,6 +26,7 @@ static uint8_t w_poste      = 0;
 static uint8_t r_poste      = 0;
 static uint8_t last_asked   = 0; // last poste asked
 static uint8_t poste_to_ask = 1;
+static uint8_t to_ask       = 0;
 
 static void parsing_poste() {
     if (last_asked == 0)
@@ -35,10 +36,10 @@ static void parsing_poste() {
         inbox_poste[w_poste].robo_livr = parse_hex(msg_poste[1]);
         if (inbox_poste[w_poste].robo_livr > nb_robots)
             return;
-        inbox_poste[w_poste].vit_dest = parse_nb(msg_poste[2], msg_poste[3]);
-        if (!is_state(msg_poste[5]))
+        inbox_poste[w_poste].vit_dest = parse_hex(msg_poste[2]);
+        if (!is_state(msg_poste[3]))
             return;
-        inbox_poste[w_poste].statut = msg_poste[5];
+        inbox_poste[w_poste].statut = msg_poste[3];
         inbox_poste[w_poste].type   = robot;
     } else if (msg_poste[1] == info_livraison) {
         if (!is_state(msg_poste[0]))
@@ -65,14 +66,16 @@ void UART1_IRQHandler(void) {
     {
         if (c_poste == MSG_LENGTH)
             c_poste = 0; // on supprime le dernier message et recommence
-        char c               = LPC_UART1->RBR & 0xFF;
+        char c = LPC_UART1->RBR & 0xFF;
+        if (c == '\0')
+            return;
         msg_poste[c_poste++] = c;
-        msg_poste[c_poste]   = '\0'; // to end string
-    }
-    if (c_poste >= 2 && msg_poste[c_poste - 1] == '\n' && msg_poste[c_poste - 2] == '\r') { // traiter le message
-        parsing_poste();
-        c_poste            = 0;
-        msg_poste[c_poste] = '\0'; // to end string
+        msg_poste[c_poste]   = '\0';                                                            // to end string
+        if (c_poste >= 2 && msg_poste[c_poste - 1] == '\n' && msg_poste[c_poste - 2] == '\r') { // traiter le message
+            parsing_poste();
+            c_poste            = 0;
+            msg_poste[c_poste] = '\0'; // to end string
+        }
     }
 }
 
@@ -107,7 +110,8 @@ void init_com_poste(uint32_t baudrate) {
     while (!(LPC_UART1->LSR & 0x20))
         ;
     NVIC_EnableIRQ(UART1_IRQn);
-    LPC_UART1->IER = 1; // RBR interrupt enable
+    NVIC_SetPriority(UART1_IRQn, 2); // priorité haute parce que ça doit aller vite
+    LPC_UART1->IER = 1;              // RBR interrupt enable
 
     // Activation du polling
     // Pas d'utilisation de systick parce qu'on veut que l'int passe par le NVIC et pas au dessus
@@ -117,23 +121,38 @@ void init_com_poste(uint32_t baudrate) {
     NVIC_EnableIRQ(TIMER0_IRQn);
 }
 
+void disable_poste_rx() {
+    LPC_UART1->IER &= ~1;
+}
+
+void enable_poste_rx() {
+    LPC_UART1->IER |= 1;
+}
+
 /*
  * returns message to treat, or NULL
  * */
 t_msg_from_poste *get_poste_msg() {
+    t_msg_from_poste *msg;
+    disable_poste_rx();
     if (r_poste == w_poste)
-        return 0;
-    return inbox_poste + w_poste; // on retourne un pointeur sur le message
+        msg = 0;
+    else
+        msg = inbox_poste + r_poste; // on retourne un pointeur sur le message
+    enable_poste_rx();
+    return msg;
 }
 
 /*
  * call this when done with processing message.
  * */
 void poste_msg_done() {
+    disable_poste_rx();
     if (r_poste == INBOX_SIZE - 1)
         r_poste = 0;
     else
         r_poste++;
+    enable_poste_rx();
 }
 
 static int uart1_putchar(int c) { // peut être bufferiser ça si les prints prennent trop de temps.
@@ -145,8 +164,15 @@ static int uart1_putchar(int c) { // peut être bufferiser ça si les prints pre
 
 void TIMER0_IRQHandler() {
     LPC_TIM0->IR = 1;
-    if (last_asked) // si un poste bloque, il n'y a plus aucune info des autres postes (feature, comme ça on sait quel
-        return;     // poste à planté...)
+    if (!last_asked)
+        to_ask = 1;
+}
+
+void poll_poste() {
+    if (!to_ask
+        || last_asked) // si un poste bloque, il n'y a plus aucune info des autres postes (feature, comme ça on sait quel
+        return;        // poste à planté...)
+    to_ask = 0;
     uart1_putchar('@');
     uart1_putchar('T');
     uart1_putchar(poste_to_ask / 10 + '0');

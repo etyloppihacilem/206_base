@@ -11,6 +11,8 @@
 
 #include "porteuse.h"
 #include "LPC17xx.h"
+#include "com_super.h"
+#include "core_cmFunc.h"
 #include <stdint.h>
 
 uint16_t send_index                      = 0;
@@ -56,6 +58,7 @@ void init_porteuse() {
     LPC_PWM1->TCR = 1 | (1 << 3); // 0b1001
 
     NVIC_EnableIRQ(PWM1_IRQn);
+    NVIC_SetPriority(PWM1_IRQn, 1);
 }
 
 void send_to_rob(uint8_t type, uint8_t robot, uint8_t argument) {
