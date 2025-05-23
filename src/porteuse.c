@@ -11,8 +11,6 @@
 
 #include "porteuse.h"
 #include "LPC17xx.h"
-#include "com_super.h"
-#include "core_cmFunc.h"
 #include <stdint.h>
 
 uint16_t send_index                      = 0;
@@ -63,7 +61,7 @@ void init_porteuse() {
 
 void send_to_rob(uint8_t type, uint8_t robot, uint8_t argument) {
     // strucutre is ROBO TYP ARGUMEN
-    uint16_t message    = ((robot & 0xF) << 10) | ((type & 0x7) << 7) | (argument & 0x3F);
+    uint16_t message    = (((type & 0x7) << 11) | (robot & 0xF) << 7) | (argument & 0x7F);
     uint16_t temp_write = write_index;
     for (uint8_t i = 0; i < MESSAGE_LENGTH; i++) {
         send_buffer[temp_write++] = (message << i) >> i;

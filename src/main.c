@@ -38,7 +38,7 @@ uint8_t recherche_livraison(uint8_t origine, uint8_t destination, char lettre) {
         enlevement[i] = origine;
         livraison[i]  = destination;
         en_cours[i]   = lettre;
-        send_to_rob(cote_depot(lettre) ? chargement_droite : chargement_gauche, i, origine);
+        send_to_rob(cote_depot(lettre) ? chargement_droite : chargement_gauche, i, (lettre - 'A') << 5 | origine);
         i = 0;
         break;
     }
@@ -111,7 +111,8 @@ void process_poste(t_msg_from_poste *todo) {
             if (todo->statut == 'C' && enlevement[rob]) { // si colispris
                 enlevement[rob] = 0;
                 send_to_rob(
-                    cote_reception(en_cours[rob]) ? dechargement_droite : dechargement_gauche, rob, livraison[rob]
+                    cote_reception(en_cours[rob]) ? dechargement_droite : dechargement_gauche, rob,
+                    (en_cours[rob] - 'A') << 5 | livraison[rob]
                 );
             }
             if (todo->statut == 'D' && (livraison[rob] || en_cours[rob])) { // si dispo après livraison
