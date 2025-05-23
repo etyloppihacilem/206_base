@@ -17,7 +17,7 @@
 #include <stdint.h>
 
 #define MSG_LENGTH 32
-#define INBOX_SIZE 4
+#define INBOX_SIZE 32
 
 char             msg_super[MSG_LENGTH + 1] = { 0 };
 t_msg_from_super inbox_super[INBOX_SIZE]   = { 0 };

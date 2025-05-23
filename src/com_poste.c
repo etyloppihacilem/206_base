@@ -15,7 +15,7 @@
 #include <stdint.h>
 
 #define MSG_LENGTH 32
-#define INBOX_SIZE 4
+#define INBOX_SIZE 32
 
 t_msg_from_poste inbox_poste[INBOX_SIZE]   = { 0 };
 char             msg_poste[MSG_LENGTH + 1] = { 0 };
