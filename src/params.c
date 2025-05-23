@@ -12,7 +12,6 @@
 #include "LPC17xx.h"
 #include "com_super.h"
 #include <stdint.h>
-#include <stdio.h>
 
 #define MAT_HEIGHT 2
 #define MAT_WIDTH 4
