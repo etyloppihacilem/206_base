@@ -18,6 +18,7 @@ uint16_t write_index                     = 0;
 uint8_t  send_buffer[SEND_BUFFER_LENGTH] = { 0 };
 uint16_t counter                         = entete;
 uint8_t  message                         = MESSAGE_LENGTH;
+uint8_t  last_sent                       = entete;
 
 void PWM1_IRQHandler() {
     LPC_PWM1->IR = 1 << 1;
@@ -30,11 +31,17 @@ void PWM1_IRQHandler() {
         counter        = entete;
         LPC_PWM1->PCR |= 1 << 9;
         message        = MESSAGE_LENGTH;
+        last_sent      = entete;
     } else {
+        if (last_sent == entete)
+            LPC_GPIO0->FIOSET |= 1 << 9;
+        else
+            LPC_GPIO0->FIOCLR |= 1 << 9;
         if (send_buffer[send_index++]) // on doit envoyer un 1
             counter = b1;
         else // on doit envoyer un 0
             counter = b0;
+        last_sent = counter;
         if (send_index >= SEND_BUFFER_LENGTH)
             send_index = 0;
         message--;
@@ -44,7 +51,9 @@ void PWM1_IRQHandler() {
 
 void init_porteuse() {
     LPC_PINCON->PINSEL4 &= 3;
-    LPC_PINCON->PINSEL4 |= 1; // setting GPIO 2.0 to PWM1.1
+    LPC_PINCON->PINSEL4 |= 1; // setting P2.0 to PWM1.1
+    LPC_PINCON->PINSEL1 &= ~(3 << 18);
+    LPC_GPIO0->FIODIR   |= 1 << 9;
 
     LPC_PWM1->MR0 = 500;
     LPC_PWM1->MR1 = 250;
