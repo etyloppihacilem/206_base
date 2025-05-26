@@ -145,8 +145,11 @@ void init_com_poste(uint32_t baudrate) {
     // Activation du polling
     // Pas d'utilisation de systick parce qu'on veut que l'int passe par le NVIC et pas au dessus
     LPC_TIM0->MCR |= 1 | 1 << 1;
-    LPC_TIM0->MR0  = 83333; // ~300Hz
-    LPC_TIM0->TCR  = 1;
+    if (nb_postes)
+        LPC_TIM0->MR0 = 8333333 / nb_postes; // ~300Hz
+    else
+        LPC_TIM0->MR0 = 8333333; // ~300Hz
+    LPC_TIM0->TCR = 1;
     NVIC_EnableIRQ(TIMER0_IRQn);
 }
 
