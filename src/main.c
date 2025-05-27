@@ -38,7 +38,7 @@ uint8_t recherche_livraison(uint8_t origine, uint8_t destination, char lettre) {
         enlevement[i] = origine;
         livraison[i]  = destination;
         en_cours[i]   = lettre;
-        send_to_rob(cote_depot(lettre) ? chargement_droite : chargement_gauche, i, (lettre - 'A') << 5 | origine);
+        send_to_rob(cote_depot(lettre) ? chargement_gauche : chargement_droite, i, (lettre - 'A') << 5 | origine);
         i = 0;
         break;
     }

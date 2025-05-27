@@ -10,6 +10,7 @@
 
 #include "com_poste.h"
 #include "LPC17xx.h"
+#include "com_super.h"
 #include "params.h"
 #include "utils.h"
 #include <stdint.h>
@@ -20,12 +21,12 @@
 t_msg_from_poste inbox_poste[INBOX_SIZE]   = { 0 };
 char             msg_poste[MSG_LENGTH + 1] = { 0 };
 
-static uint8_t c_poste      = 0;
-static uint8_t w_poste      = 0;
-static uint8_t r_poste      = 0;
-static uint8_t last_asked   = 0; // last poste asked
-static uint8_t poste_to_ask = 1;
-static uint8_t to_ask       = 0;
+static volatile uint8_t c_poste      = 0;
+static volatile uint8_t w_poste      = 0;
+static volatile uint8_t r_poste      = 0;
+static volatile uint8_t last_asked   = 0; // last poste asked
+static volatile uint8_t poste_to_ask = 1;
+static volatile uint8_t to_ask       = 0;
 
 static void parsing_poste() {
     if (last_asked == 0)
@@ -41,17 +42,15 @@ static void parsing_poste() {
         inbox_poste[w_poste].statut = msg_poste[3];
         inbox_poste[w_poste].type   = robot;
     } else if (msg_poste[1] == info_livraison) {
-        if (!is_state(msg_poste[0]))
+        if (!is_livraison(msg_poste[0]))
             return;
         inbox_poste[w_poste].robo_livr = msg_poste[0];
         inbox_poste[w_poste].vit_dest  = parse_nb(msg_poste[2], msg_poste[3]);
-        if (inbox_poste[w_poste].vit_dest > nb_postes)
-            return;
+        // if (inbox_poste[w_poste].vit_dest > nb_postes)
+        //     return;
         inbox_poste[w_poste].type = info_livraison;
     } else if (msg_poste[0] == EOT) { // End Of Transmission : NULL\r\n
         last_asked = 0;
-        return;
-    } else {
         return;
     }
     if (w_poste == INBOX_SIZE - 1)
@@ -153,25 +152,15 @@ void init_com_poste(uint32_t baudrate) {
     NVIC_EnableIRQ(TIMER0_IRQn);
 }
 
-void disable_poste_rx() {
-    LPC_UART1->IER &= ~1;
-}
-
-void enable_poste_rx() {
-    LPC_UART1->IER |= 1;
-}
-
 /*
  * returns message to treat, or NULL
  * */
 t_msg_from_poste *get_poste_msg() {
     t_msg_from_poste *msg;
-    disable_poste_rx();
     if (r_poste == w_poste)
         msg = 0;
     else
         msg = inbox_poste + r_poste; // on retourne un pointeur sur le message
-    enable_poste_rx();
     return msg;
 }
 
@@ -179,12 +168,10 @@ t_msg_from_poste *get_poste_msg() {
  * call this when done with processing message.
  * */
 void poste_msg_done() {
-    disable_poste_rx();
     if (r_poste == INBOX_SIZE - 1)
         r_poste = 0;
     else
         r_poste++;
-    enable_poste_rx();
 }
 
 static int uart1_putchar(int c) { // peut être bufferiser ça si les prints prennent trop de temps.
@@ -205,13 +192,13 @@ void poll_poste() {
         || last_asked) // si un poste bloque, il n'y a plus aucune info des autres postes (feature, comme ça on sait quel
         return;        // poste à planté...)
     to_ask = 0;
+    last_asked = poste_to_ask;
     uart1_putchar('@');
     uart1_putchar('T');
     uart1_putchar(poste_to_ask / 10 + '0');
     uart1_putchar(poste_to_ask % 10 + '0');
     uart1_putchar('\r');
     uart1_putchar('\n');
-    last_asked = poste_to_ask;
     if (++poste_to_ask > nb_postes)
         poste_to_ask = 1;
 }

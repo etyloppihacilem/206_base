@@ -73,7 +73,7 @@ void send_to_rob(uint8_t type, uint8_t robot, uint8_t argument) {
     uint16_t message    = (((type & 0x7) << 11) | (robot & 0xF) << 7) | (argument & 0x7F);
     uint16_t temp_write = write_index;
     for (uint8_t i = 0; i < MESSAGE_LENGTH; i++) {
-        send_buffer[temp_write++] = (message << i) >> i;
+        send_buffer[temp_write++] = (message & (1 << (MESSAGE_LENGTH - 1 - i))) >> i;
         if (temp_write >= SEND_BUFFER_LENGTH)
             temp_write = 0;
     }
